@@ -43,6 +43,11 @@ jobs:
           sudo tar zxvf crictl-v1.32.0-linux-amd64.tar.gz -C /usr/local/bin
           sudo rm -f crictl-v1.32.0-linux-amd64.tar.gz
 
+      - name: Remove conflicting packages
+        run: |
+          sudo apt-get remove -y containerd containerd.io
+          sudo apt-get autoremove -y
+
       - name: Install Docker
         run: |
           sudo apt-get update
@@ -50,37 +55,25 @@ jobs:
           sudo systemctl enable docker
           sudo systemctl start docker
 
-      - name: Install Go
+      - name: Verify Docker Installation
         run: |
-          wget https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
-          sudo tar -C /usr/local -xzf go1.20.6.linux-amd64.tar.gz
-          echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
-          source ~/.bashrc
+          docker --version
+          sudo systemctl status docker
 
-          # Install cri-dockerd
+      - name: Install cri-dockerd
+        run: |
           git clone https://github.com/Mirantis/cri-dockerd.git
           cd cri-dockerd
           mkdir bin
-          go build -o bin/cri-dockerd
+          /usr/local/go/bin/go build -o bin/cri-dockerd
           sudo mv bin/cri-dockerd /usr/local/bin/
-          cd ..
-          sudo rm -rf cri-dockerd
-
-          # Set up systemd service for cri-dockerd
           wget https://raw.githubusercontent.com/Mirantis/cri-dockerd/master/packaging/systemd/cri-docker.service
           wget https://raw.githubusercontent.com/Mirantis/cri-dockerd/master/packaging/systemd/cri-docker.socket
           sudo mv cri-docker.service cri-docker.socket /etc/systemd/system/
+          sudo chmod 644 /etc/systemd/system/cri-docker.service /etc/systemd/system/cri-docker.socket
           sudo systemctl daemon-reload
           sudo systemctl enable cri-docker.service
-          sudo systemctl enable cri-docker.socket
           sudo systemctl start cri-docker.service
-          sudo systemctl start cri-docker.socket
-
-
-      - name: Check cri-docker service logs
-        run: |
-          sudo systemctl status cri-docker.service || true
-          sudo journalctl -xeu cri-docker.service || true
 
       - name: Install Minikube
         run: |
