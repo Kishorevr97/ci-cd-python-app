@@ -43,6 +43,25 @@ jobs:
           sudo tar zxvf crictl-v1.32.0-linux-amd64.tar.gz -C /usr/local/bin
           sudo rm -f crictl-v1.32.0-linux-amd64.tar.gz
 
+          # Install cri-dockerd
+          git clone https://github.com/Mirantis/cri-dockerd.git
+          cd cri-dockerd
+          mkdir bin
+          go build -o bin/cri-dockerd
+          sudo mv bin/cri-dockerd /usr/local/bin/
+          cd ..
+          sudo rm -rf cri-dockerd
+
+          # Set up systemd service for cri-dockerd
+          wget https://raw.githubusercontent.com/Mirantis/cri-dockerd/master/packaging/systemd/cri-docker.service
+          wget https://raw.githubusercontent.com/Mirantis/cri-dockerd/master/packaging/systemd/cri-docker.socket
+          sudo mv cri-docker.service cri-docker.socket /etc/systemd/system/
+          sudo systemctl daemon-reload
+          sudo systemctl enable cri-docker.service
+          sudo systemctl enable cri-docker.socket
+          sudo systemctl start cri-docker.service
+          sudo systemctl start cri-docker.socket
+
       - name: Install Minikube
         run: |
            curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
