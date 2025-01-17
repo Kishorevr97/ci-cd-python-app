@@ -43,6 +43,20 @@ jobs:
           sudo tar zxvf crictl-v1.32.0-linux-amd64.tar.gz -C /usr/local/bin
           sudo rm -f crictl-v1.32.0-linux-amd64.tar.gz
 
+      - name: Install Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl enable docker
+          sudo systemctl start docker
+
+      - name: Install Go
+        run: |
+          wget https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
+          sudo tar -C /usr/local -xzf go1.20.6.linux-amd64.tar.gz
+          echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
+          source ~/.bashrc
+
           # Install cri-dockerd
           git clone https://github.com/Mirantis/cri-dockerd.git
           cd cri-dockerd
@@ -61,6 +75,12 @@ jobs:
           sudo systemctl enable cri-docker.socket
           sudo systemctl start cri-docker.service
           sudo systemctl start cri-docker.socket
+
+
+      - name: Check cri-docker service logs
+        run: |
+          sudo systemctl status cri-docker.service || true
+          sudo journalctl -xeu cri-docker.service || true
 
       - name: Install Minikube
         run: |
