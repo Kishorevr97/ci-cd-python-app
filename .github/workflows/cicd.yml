@@ -41,7 +41,7 @@ jobs:
       
       - name: start minikube      
         run: |
-         sudo minikube start
+         sudo minikube start --driver=docker
          sudo minikube status
 
       - name: Apply Kubernetes Configuration
